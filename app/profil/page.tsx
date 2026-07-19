@@ -25,6 +25,11 @@ export default function ProfilPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const [newEmail, setNewEmail] = useState("");
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSuccess, setEmailSuccess] = useState(false);
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user);
@@ -32,6 +37,7 @@ export default function ProfilPage() {
       setTelephone((data.user?.user_metadata?.telephone as string) ?? "");
       setPresentation((data.user?.user_metadata?.presentation as string) ?? "");
       setPhotoUrl((data.user?.user_metadata?.photo_url as string) ?? null);
+      setNewEmail(data.user?.email ?? "");
 
       if (data.user) {
         const { data: profile } = await supabase
@@ -105,6 +111,24 @@ export default function ProfilPage() {
     setSuccess(true);
   }
 
+  async function handleEmailChange() {
+    if (!newEmail || newEmail === user?.email) return;
+    setEmailLoading(true);
+    setEmailError(null);
+    setEmailSuccess(false);
+
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+
+    setEmailLoading(false);
+
+    if (error) {
+      setEmailError(error.message);
+      return;
+    }
+
+    setEmailSuccess(true);
+  }
+
   if (checkingAuth) {
     return (
       <main className="min-h-screen bg-cement flex items-center justify-center">
@@ -121,7 +145,37 @@ export default function ProfilPage() {
       >
         <h1 className="font-display text-xl">MODIFIER MON PROFIL</h1>
 
-        <p className="font-body text-xs text-steel">{user?.email}</p>
+        <div className="border border-concrete/15 rounded-sm p-3 bg-white">
+          <label className="font-body text-sm text-steel block mb-1">
+            Email de connexion
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              className="flex-1 border border-concrete/20 rounded-sm px-3 py-2 font-body text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleEmailChange}
+              disabled={emailLoading || newEmail === user?.email}
+              className="font-body text-xs px-3 py-2 border border-concrete/20 rounded-sm hover:border-safety hover:text-alert transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {emailLoading ? "..." : "Changer"}
+            </button>
+          </div>
+          {emailError && (
+            <p className="font-body text-xs text-alert mt-2">{emailError}</p>
+          )}
+          {emailSuccess && (
+            <p className="font-body text-xs text-safety-dark mt-2">
+              Vérifiez votre nouvelle boîte mail pour confirmer le
+              changement (et l&apos;ancienne si une double confirmation est
+              demandée).
+            </p>
+          )}
+        </div>
 
         <div>
           <label className="font-body text-sm text-steel block mb-1">
