@@ -2,8 +2,10 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import TrustBadges from "@/components/TrustBadges";
 import ListingCard, { Listing } from "@/components/ListingCard";
+import ProduitStarCard from "@/components/ProduitStarCard";
 import Footer from "@/components/Footer";
 import { getLatestListings } from "@/lib/listings";
+import { getProduitStar } from "@/lib/produit-star";
 
 // Données d'exemple — seront remplacées par une requête Supabase
 // (table `listings`) une fois la base de données branchée.
@@ -65,7 +67,8 @@ const sampleListings: Listing[] = [
 ];
 
 export default async function Home() {
-  const dbListings = await getLatestListings();
+  const produitStar = await getProduitStar();
+  const dbListings = await getLatestListings(produitStar ? 5 : 6);
 
   const listings: Listing[] =
     dbListings.length > 0
@@ -103,6 +106,13 @@ export default async function Home() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {produitStar && (
+            <ProduitStarCard
+              titre={produitStar.titre ?? ""}
+              imageUrl={produitStar.image_url_1 ?? ""}
+              prix={produitStar.prix}
+            />
+          )}
           {listings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}

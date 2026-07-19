@@ -36,6 +36,20 @@ export default function AdminPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [listings, setListings] = useState<ListingRow[]>([]);
 
+  const [psTitre, setPsTitre] = useState("");
+  const [psDescription, setPsDescription] = useState("");
+  const [psPrix, setPsPrix] = useState("");
+  const [psWhatsapp, setPsWhatsapp] = useState("");
+  const [psImage1, setPsImage1] = useState<string | null>(null);
+  const [psImage2, setPsImage2] = useState<string | null>(null);
+  const [psImage3, setPsImage3] = useState<string | null>(null);
+  const [psFile1, setPsFile1] = useState<File | null>(null);
+  const [psFile2, setPsFile2] = useState<File | null>(null);
+  const [psFile3, setPsFile3] = useState<File | null>(null);
+  const [psLoading, setPsLoading] = useState(false);
+  const [psSuccess, setPsSuccess] = useState(false);
+  const [psError, setPsError] = useState<string | null>(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
@@ -74,6 +88,72 @@ export default function AdminPage() {
       .select("id, titre, collection, ville, prix, user_id")
       .order("created_at", { ascending: false });
     setListings((listingsData ?? []) as ListingRow[]);
+
+    const { data: produitStar } = await supabase
+      .from("produit_star")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (produitStar) {
+      setPsTitre(produitStar.titre ?? "");
+      setPsDescription(produitStar.description ?? "");
+      setPsPrix(produitStar.prix !== null ? String(produitStar.prix) : "");
+      setPsWhatsapp(produitStar.whatsapp ?? "");
+      setPsImage1(produitStar.image_url_1 ?? null);
+      setPsImage2(produitStar.image_url_2 ?? null);
+      setPsImage3(produitStar.image_url_3 ?? null);
+    }
+  }
+
+  async function enregistrerProduitStar(e: React.FormEvent) {
+    e.preventDefault();
+    setPsLoading(true);
+    setPsError(null);
+    setPsSuccess(false);
+
+    async function uploadSiBesoin(file: File | null, urlActuelle: string | null) {
+      if (!file) return urlActuelle;
+      const filePath = `produit-star/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage
+        .from("annonces")
+        .upload(filePath, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("annonces").getPublicUrl(filePath);
+      return data.publicUrl;
+    }
+
+    try {
+      const url1 = await uploadSiBesoin(psFile1, psImage1);
+      const url2 = await uploadSiBesoin(psFile2, psImage2);
+      const url3 = await uploadSiBesoin(psFile3, psImage3);
+
+      const { error } = await supabase.from("produit_star").upsert({
+        id: 1,
+        titre: psTitre,
+        description: psDescription,
+        prix: psPrix ? Number(psPrix) : null,
+        image_url_1: url1,
+        image_url_2: url2,
+        image_url_3: url3,
+        whatsapp: psWhatsapp,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      setPsImage1(url1);
+      setPsImage2(url2);
+      setPsImage3(url3);
+      setPsFile1(null);
+      setPsFile2(null);
+      setPsFile3(null);
+      setPsSuccess(true);
+    } catch (err) {
+      setPsError(err instanceof Error ? err.message : "Erreur inconnue");
+    }
+
+    setPsLoading(false);
   }
 
   async function toggleSuspension(profile: Profile) {
@@ -171,6 +251,109 @@ export default function AdminPage() {
             Retour à l'accueil
           </button>
         </div>
+
+        <h2 className="font-display text-lg mb-4">Produit star</h2>
+        <form
+          onSubmit={enregistrerProduitStar}
+          className="mb-12 bg-white border border-concrete/15 rounded-sm p-4 flex flex-col gap-4"
+        >
+          <p className="font-body text-sm text-steel">
+            Ce produit reste toujours affiché en premier sur la page
+            d&apos;accueil, contrairement aux autres annonces qui changent.
+          </p>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            {[
+              { file: psFile1, setFile: setPsFile1, image: psImage1, label: "Image 1" },
+              { file: psFile2, setFile: setPsFile2, image: psImage2, label: "Image 2" },
+              { file: psFile3, setFile: setPsFile3, image: psImage3, label: "Image 3" },
+            ].map((slot, i) => (
+              <div key={i}>
+                <label className="font-body text-sm text-steel block mb-1">
+                  {slot.label}
+                </label>
+                {slot.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={slot.image}
+                    alt={slot.label}
+                    className="w-full h-32 object-contain bg-cement border border-concrete/15 rounded-sm mb-2"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => slot.setFile(e.target.files?.[0] ?? null)}
+                  className="w-full font-body text-xs"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label className="font-body text-sm text-steel block mb-1">
+              Titre du produit
+            </label>
+            <input
+              value={psTitre}
+              onChange={(e) => setPsTitre(e.target.value)}
+              className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body"
+            />
+          </div>
+
+          <div>
+            <label className="font-body text-sm text-steel block mb-1">
+              Description
+            </label>
+            <textarea
+              value={psDescription}
+              onChange={(e) => setPsDescription(e.target.value)}
+              rows={4}
+              className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body resize-none"
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="font-body text-sm text-steel block mb-1">
+                Prix (DH)
+              </label>
+              <input
+                type="number"
+                value={psPrix}
+                onChange={(e) => setPsPrix(e.target.value)}
+                className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-mono"
+              />
+            </div>
+            <div>
+              <label className="font-body text-sm text-steel block mb-1">
+                Numéro WhatsApp
+              </label>
+              <input
+                type="tel"
+                value={psWhatsapp}
+                onChange={(e) => setPsWhatsapp(e.target.value)}
+                placeholder="Ex : 0612345678"
+                className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body"
+              />
+            </div>
+          </div>
+
+          {psError && <p className="font-body text-sm text-alert">{psError}</p>}
+          {psSuccess && (
+            <p className="font-body text-sm text-safety-dark">
+              Produit star enregistré.
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={psLoading}
+            className="font-body font-semibold px-6 py-3 bg-safety text-concrete rounded-sm hover:bg-safety-dark transition-colors disabled:opacity-50 self-start"
+          >
+            {psLoading ? "Enregistrement..." : "Enregistrer le produit star"}
+          </button>
+        </form>
 
         <h2 className="font-display text-lg mb-4">Fournisseurs</h2>
         <div className="mb-12 bg-white border border-concrete/15 rounded-sm overflow-hidden">
