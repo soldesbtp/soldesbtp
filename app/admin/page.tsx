@@ -13,6 +13,8 @@ type Profile = {
   photo_url: string | null;
   est_admin: boolean;
   suspendu: boolean;
+  valide: boolean;
+  acces_expire_le: string | null;
 };
 
 type ListingRow = {
@@ -63,6 +65,7 @@ export default function AdminPage() {
     const { data: profilesData } = await supabase
       .from("profiles")
       .select("*")
+      .order("valide", { ascending: true })
       .order("nom_societe", { ascending: true });
     setProfiles((profilesData ?? []) as Profile[]);
 
@@ -77,6 +80,28 @@ export default function AdminPage() {
     await supabase
       .from("profiles")
       .update({ suspendu: !profile.suspendu })
+      .eq("id", profile.id);
+    chargerDonnees();
+  }
+
+  async function validerFournisseur(profile: Profile) {
+    const dansTroisMois = new Date();
+    dansTroisMois.setMonth(dansTroisMois.getMonth() + 3);
+
+    await supabase
+      .from("profiles")
+      .update({ valide: true, acces_expire_le: dansTroisMois.toISOString() })
+      .eq("id", profile.id);
+    chargerDonnees();
+  }
+
+  async function activerAbonnementUnAn(profile: Profile) {
+    const dansUnAn = new Date();
+    dansUnAn.setFullYear(dansUnAn.getFullYear() + 1);
+
+    await supabase
+      .from("profiles")
+      .update({ valide: true, acces_expire_le: dansUnAn.toISOString() })
       .eq("id", profile.id);
     chargerDonnees();
   }
@@ -173,11 +198,33 @@ export default function AdminPage() {
                         ADMIN
                       </span>
                     )}
+                    {!p.est_admin && !p.valide && (
+                      <span className="ml-2 font-mono text-xs text-alert">
+                        EN ATTENTE DE VALIDATION
+                      </span>
+                    )}
                   </p>
                   <p className="font-mono text-xs text-steel">
                     {p.telephone}
                     {p.suspendu && (
                       <span className="ml-2 text-alert">· Suspendu</span>
+                    )}
+                    {!p.est_admin && p.valide && p.acces_expire_le && (
+                      <span
+                        className={
+                          "ml-2 " +
+                          (new Date(p.acces_expire_le) < new Date()
+                            ? "text-alert"
+                            : "")
+                        }
+                      >
+                        ·{" "}
+                        {new Date(p.acces_expire_le) < new Date()
+                          ? "Essai gratuit expiré"
+                          : `Accès jusqu'au ${new Date(
+                              p.acces_expire_le
+                            ).toLocaleDateString("fr-FR")}`}
+                      </span>
                     )}
                   </p>
                 </div>
@@ -185,6 +232,32 @@ export default function AdminPage() {
 
               {!p.est_admin && (
                 <div className="flex gap-2">
+                  {!p.valide && (
+                    <button
+                      onClick={() => validerFournisseur(p)}
+                      className="font-body text-xs px-3 py-2 border border-safety bg-safety/10 text-safety-dark rounded-sm hover:bg-safety hover:text-concrete transition-colors"
+                    >
+                      Valider (accès 3 mois)
+                    </button>
+                  )}
+                  {p.valide &&
+                    p.acces_expire_le &&
+                    new Date(p.acces_expire_le) < new Date() && (
+                      <>
+                        <button
+                          onClick={() => validerFournisseur(p)}
+                          className="font-body text-xs px-3 py-2 border border-safety bg-safety/10 text-safety-dark rounded-sm hover:bg-safety hover:text-concrete transition-colors"
+                        >
+                          Prolonger 3 mois
+                        </button>
+                        <button
+                          onClick={() => activerAbonnementUnAn(p)}
+                          className="font-body text-xs px-3 py-2 border border-concrete bg-concrete text-cement rounded-sm hover:bg-concrete-light transition-colors"
+                        >
+                          Abonnement payé (1 an)
+                        </button>
+                      </>
+                    )}
                   <button
                     onClick={() => toggleSuspension(p)}
                     className="font-body text-xs px-3 py-2 border border-concrete/20 rounded-sm hover:border-safety hover:text-alert transition-colors"

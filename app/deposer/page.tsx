@@ -52,6 +52,8 @@ export default function DeposerPage() {
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [suspendu, setSuspendu] = useState(false);
+  const [valide, setValide] = useState(true);
+  const [essaiExpire, setEssaiExpire] = useState(false);
 
   const [titre, setTitre] = useState("");
   const [ville, setVille] = useState("");
@@ -79,11 +81,18 @@ export default function DeposerPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("suspendu")
+        .select("suspendu, valide, acces_expire_le")
         .eq("id", data.user.id)
         .maybeSingle();
 
       setSuspendu(Boolean(profile?.suspendu));
+      setValide(profile?.valide === true);
+      setEssaiExpire(
+        Boolean(
+          profile?.acces_expire_le &&
+            new Date(profile.acces_expire_le) < new Date()
+        )
+      );
       setCheckingAuth(false);
     });
   }, [supabase, router]);
@@ -177,6 +186,39 @@ export default function DeposerPage() {
           <p className="font-body text-sm text-steel">
             Votre compte a été suspendu et ne peut plus déposer d&apos;annonce.
             Contactez SoldesBTP.ma pour plus d&apos;informations.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!valide) {
+    return (
+      <main className="min-h-screen bg-cement flex items-center justify-center px-6">
+        <div className="stock-tag max-w-md text-center">
+          <h1 className="font-display text-xl mb-3">
+            COMPTE EN COURS DE VALIDATION
+          </h1>
+          <p className="font-body text-sm text-steel">
+            Votre inscription a bien été reçue. Notre équipe examine votre
+            compte et vous pourrez déposer des annonces dès qu&apos;il sera
+            validé.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (essaiExpire) {
+    return (
+      <main className="min-h-screen bg-cement flex items-center justify-center px-6">
+        <div className="stock-tag max-w-md text-center">
+          <h1 className="font-display text-xl mb-3 text-alert">
+            PÉRIODE D&apos;ESSAI TERMINÉE
+          </h1>
+          <p className="font-body text-sm text-steel">
+            Votre accès gratuit de 3 mois est arrivé à son terme. Contactez
+            SoldesBTP.ma pour continuer à publier des annonces.
           </p>
         </div>
       </main>

@@ -20,7 +20,7 @@ export default function InscriptionPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -28,13 +28,26 @@ export default function InscriptionPage() {
       },
     });
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       setError(error.message);
       return;
     }
 
+    if (data.user) {
+      await fetch("/api/inscription-fournisseur", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: data.user.id,
+          nomSociete,
+          telephone,
+          email,
+        }),
+      }).catch(() => {});
+    }
+
+    setLoading(false);
     setSuccess(true);
   }
 
@@ -45,7 +58,9 @@ export default function InscriptionPage() {
           <h1 className="font-display text-xl mb-3">VÉRIFIEZ VOS EMAILS</h1>
           <p className="font-body text-sm text-steel">
             On vous a envoyé un lien de confirmation à {email}. Cliquez
-            dessus pour activer votre compte, puis connectez-vous.
+            dessus pour activer votre compte, puis connectez-vous. Votre
+            compte sera examiné par notre équipe avant de pouvoir publier des
+            annonces.
           </p>
         </div>
       </main>
