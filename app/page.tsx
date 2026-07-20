@@ -111,6 +111,8 @@ export default async function Home() {
               titre={produitStar.titre ?? ""}
               imageUrl={produitStar.image_url_1 ?? ""}
               prix={produitStar.prix}
+              messageAccrocheur={produitStar.message_accrocheur}
+              imageBarreeUrl={produitStar.image_barree_url}
             />
           )}
           {listings.map((listing) => (

@@ -9,6 +9,8 @@ export type ProduitStar = {
   image_url_2: string | null;
   image_url_3: string | null;
   whatsapp: string | null;
+  message_accrocheur: string | null;
+  image_barree_url: string | null;
 };
 
 export async function getProduitStar(): Promise<ProduitStar | null> {

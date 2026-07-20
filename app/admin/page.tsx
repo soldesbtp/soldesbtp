@@ -46,6 +46,9 @@ export default function AdminPage() {
   const [psFile1, setPsFile1] = useState<File | null>(null);
   const [psFile2, setPsFile2] = useState<File | null>(null);
   const [psFile3, setPsFile3] = useState<File | null>(null);
+  const [psMessage, setPsMessage] = useState("");
+  const [psImageBarree, setPsImageBarree] = useState<string | null>(null);
+  const [psFileBarree, setPsFileBarree] = useState<File | null>(null);
   const [psLoading, setPsLoading] = useState(false);
   const [psSuccess, setPsSuccess] = useState(false);
   const [psError, setPsError] = useState<string | null>(null);
@@ -103,6 +106,8 @@ export default function AdminPage() {
       setPsImage1(produitStar.image_url_1 ?? null);
       setPsImage2(produitStar.image_url_2 ?? null);
       setPsImage3(produitStar.image_url_3 ?? null);
+      setPsMessage(produitStar.message_accrocheur ?? "");
+      setPsImageBarree(produitStar.image_barree_url ?? null);
     }
   }
 
@@ -127,6 +132,7 @@ export default function AdminPage() {
       const url1 = await uploadSiBesoin(psFile1, psImage1);
       const url2 = await uploadSiBesoin(psFile2, psImage2);
       const url3 = await uploadSiBesoin(psFile3, psImage3);
+      const urlBarree = await uploadSiBesoin(psFileBarree, psImageBarree);
 
       const { error } = await supabase.from("produit_star").upsert({
         id: 1,
@@ -137,6 +143,8 @@ export default function AdminPage() {
         image_url_2: url2,
         image_url_3: url3,
         whatsapp: psWhatsapp,
+        message_accrocheur: psMessage,
+        image_barree_url: urlBarree,
         updated_at: new Date().toISOString(),
       });
 
@@ -145,9 +153,11 @@ export default function AdminPage() {
       setPsImage1(url1);
       setPsImage2(url2);
       setPsImage3(url3);
+      setPsImageBarree(urlBarree);
       setPsFile1(null);
       setPsFile2(null);
       setPsFile3(null);
+      setPsFileBarree(null);
       setPsSuccess(true);
     } catch (err) {
       setPsError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -310,6 +320,37 @@ export default function AdminPage() {
               onChange={(e) => setPsDescription(e.target.value)}
               rows={4}
               className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body resize-none"
+            />
+          </div>
+
+          <div className="border border-concrete/15 rounded-sm p-3 bg-cement">
+            <label className="font-body text-sm text-steel block mb-1">
+              Message accrocheur (ex : &quot;LA SOLUTION QUI REMPLACE LE
+              BITUME&quot;)
+            </label>
+            <input
+              value={psMessage}
+              onChange={(e) => setPsMessage(e.target.value)}
+              placeholder="Ex : La solution qui remplace le bitume"
+              className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body mb-3"
+            />
+
+            <label className="font-body text-sm text-steel block mb-1">
+              Image à barrer d&apos;une croix rouge (ex : photo de bitume)
+            </label>
+            {psImageBarree && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={psImageBarree}
+                alt="Image barrée"
+                className="w-20 h-20 object-cover bg-white border border-concrete/15 rounded-sm mb-2"
+              />
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPsFileBarree(e.target.files?.[0] ?? null)}
+              className="w-full font-body text-xs"
             />
           </div>
 
