@@ -36,6 +36,9 @@ export default function AdminPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [listings, setListings] = useState<ListingRow[]>([]);
 
+  const [nouveauxEmails, setNouveauxEmails] = useState<Record<string, string>>({});
+  const [emailEnCours, setEmailEnCours] = useState<string | null>(null);
+
   const [psTitre, setPsTitre] = useState("");
   const [psDescription, setPsDescription] = useState("");
   const [psPrix, setPsPrix] = useState("");
@@ -194,6 +197,36 @@ export default function AdminPage() {
       .update({ valide: true, acces_expire_le: dansUnAn.toISOString() })
       .eq("id", profile.id);
     chargerDonnees();
+  }
+
+  async function changerEmail(profile: Profile) {
+    const newEmail = nouveauxEmails[profile.id];
+    if (!newEmail) return;
+
+    setEmailEnCours(profile.id);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    const res = await fetch("/api/admin/update-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ targetUserId: profile.id, newEmail }),
+    });
+
+    setEmailEnCours(null);
+
+    if (!res.ok) {
+      const body = await res.json();
+      alert("Erreur : " + (body.error ?? "inconnue"));
+      return;
+    }
+
+    setNouveauxEmails((prev) => ({ ...prev, [profile.id]: "" }));
+    alert(`Email changé pour "${profile.nom_societe}".`);
   }
 
   async function supprimerAnnonce(id: string) {
@@ -401,8 +434,9 @@ export default function AdminPage() {
           {profiles.map((p) => (
             <div
               key={p.id}
-              className="flex items-center justify-between gap-4 p-4 border-b border-concrete/10 last:border-b-0 flex-wrap"
+              className="flex flex-col gap-3 p-4 border-b border-concrete/10 last:border-b-0"
             >
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
                 {p.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -493,6 +527,33 @@ export default function AdminPage() {
                     className="font-body text-xs px-3 py-2 border border-alert/40 text-alert rounded-sm hover:bg-alert hover:text-white transition-colors"
                   >
                     Supprimer le compte
+                  </button>
+                </div>
+              )}
+            </div>
+
+              {!p.est_admin && (
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="email"
+                    value={nouveauxEmails[p.id] ?? ""}
+                    onChange={(e) =>
+                      setNouveauxEmails((prev) => ({
+                        ...prev,
+                        [p.id]: e.target.value,
+                      }))
+                    }
+                    placeholder="Nouvel email de connexion"
+                    className="flex-1 max-w-xs border border-concrete/20 rounded-sm px-3 py-2 font-body text-xs"
+                  />
+                  <button
+                    onClick={() => changerEmail(p)}
+                    disabled={
+                      emailEnCours === p.id || !nouveauxEmails[p.id]
+                    }
+                    className="font-body text-xs px-3 py-2 border border-concrete/20 rounded-sm hover:border-safety hover:text-alert transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {emailEnCours === p.id ? "..." : "Changer l'email"}
                   </button>
                 </div>
               )}
