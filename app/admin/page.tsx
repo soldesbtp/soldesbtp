@@ -26,6 +26,15 @@ type ListingRow = {
   user_id: string | null;
 };
 
+function whatsappLinkFournisseur(phone: string, nomSociete: string) {
+  const digits = phone.replace(/[^0-9]/g, "");
+  const international = digits.startsWith("0") ? "212" + digits.slice(1) : digits;
+  const message = encodeURIComponent(
+    `Bonjour ${nomSociete}, votre inscription sur SoldesBTP.ma a été validée ! Vous pouvez dès à présent déposer vos annonces depuis votre espace fournisseur.`
+  );
+  return `https://wa.me/${international}?text=${message}`;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -201,7 +210,25 @@ export default function AdminPage() {
     chargerDonnees();
   }
 
+  async function notifierFournisseurValide(profile: Profile) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    await fetch("/api/admin/notify-fournisseur-valide", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        targetUserId: profile.id,
+        nomSociete: profile.nom_societe,
+      }),
+    }).catch(() => {});
+  }
+
   async function validerFournisseur(profile: Profile) {
+    const premiereValidation = !profile.valide;
     const dansTroisMois = new Date();
     dansTroisMois.setMonth(dansTroisMois.getMonth() + 3);
 
@@ -209,6 +236,11 @@ export default function AdminPage() {
       .from("profiles")
       .update({ valide: true, acces_expire_le: dansTroisMois.toISOString() })
       .eq("id", profile.id);
+
+    if (premiereValidation) {
+      await notifierFournisseurValide(profile);
+    }
+
     chargerDonnees();
   }
 
@@ -530,6 +562,19 @@ export default function AdminPage() {
 
               {!p.est_admin && (
                 <div className="flex gap-2">
+                  {p.telephone && (
+                    <a
+                      href={whatsappLinkFournisseur(
+                        p.telephone,
+                        p.nom_societe ?? ""
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-body text-xs px-3 py-2 border border-safety/40 text-safety-dark rounded-sm hover:bg-safety hover:text-concrete transition-colors"
+                    >
+                      Contacter sur WhatsApp
+                    </a>
+                  )}
                   {!p.valide && (
                     <button
                       onClick={() => validerFournisseur(p)}
