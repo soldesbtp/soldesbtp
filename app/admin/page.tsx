@@ -26,13 +26,24 @@ type ListingRow = {
   user_id: string | null;
 };
 
-function whatsappLinkFournisseur(phone: string, nomSociete: string) {
+function whatsappLien(phone: string, message: string) {
   const digits = phone.replace(/[^0-9]/g, "");
   const international = digits.startsWith("0") ? "212" + digits.slice(1) : digits;
-  const message = encodeURIComponent(
+  return `https://wa.me/${international}?text=${encodeURIComponent(message)}`;
+}
+
+function whatsappLinkFournisseur(phone: string, nomSociete: string) {
+  return whatsappLien(
+    phone,
     `Bonjour ${nomSociete}, votre inscription sur SoldesBTP.ma a été validée ! Vous pouvez dès à présent déposer vos annonces depuis votre espace fournisseur.`
   );
-  return `https://wa.me/${international}?text=${message}`;
+}
+
+function whatsappLinkPresentation(phone: string, nomSociete: string) {
+  return whatsappLien(
+    phone,
+    `Bonjour ${nomSociete}, pour finaliser la validation de votre compte sur SoldesBTP.ma, pourriez-vous nous présenter votre société (activité, produits vendus, années d'expérience) ? Merci !`
+  );
 }
 
 export default function AdminPage() {
@@ -573,6 +584,19 @@ export default function AdminPage() {
                       className="font-body text-xs px-3 py-2 border border-safety/40 text-safety-dark rounded-sm hover:bg-safety hover:text-concrete transition-colors"
                     >
                       Contacter sur WhatsApp
+                    </a>
+                  )}
+                  {p.telephone && (
+                    <a
+                      href={whatsappLinkPresentation(
+                        p.telephone,
+                        p.nom_societe ?? ""
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-body text-xs px-3 py-2 border border-concrete/20 rounded-sm hover:border-safety hover:text-alert transition-colors"
+                    >
+                      Demander une présentation
                     </a>
                   )}
                   {!p.valide && (
