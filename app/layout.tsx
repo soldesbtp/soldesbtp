@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo_Black, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const archivoBlack = Archivo_Black({
@@ -36,6 +37,7 @@ export default function RootLayout({
         className={`${archivoBlack.variable} ${inter.variable} ${plexMono.variable}`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
