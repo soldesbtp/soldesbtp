@@ -39,6 +39,14 @@ export default function AdminPage() {
   const [nouveauxEmails, setNouveauxEmails] = useState<Record<string, string>>({});
   const [emailEnCours, setEmailEnCours] = useState<string | null>(null);
 
+  const [contactsParFournisseur, setContactsParFournisseur] = useState<
+    Record<string, number>
+  >({});
+  const [contactsParListing, setContactsParListing] = useState<
+    Record<string, number>
+  >({});
+  const [detailOuvert, setDetailOuvert] = useState<Record<string, boolean>>({});
+
   const [psTitre, setPsTitre] = useState("");
   const [psDescription, setPsDescription] = useState("");
   const [psPrix, setPsPrix] = useState("");
@@ -94,6 +102,22 @@ export default function AdminPage() {
       .select("id, titre, collection, ville, prix, user_id")
       .order("created_at", { ascending: false });
     setListings((listingsData ?? []) as ListingRow[]);
+
+    const { data: contactsData } = await supabase
+      .from("contacts_whatsapp")
+      .select("user_id, listing_id");
+    const compteParFournisseur: Record<string, number> = {};
+    const compteParListing: Record<string, number> = {};
+    (contactsData ?? []).forEach((c) => {
+      if (c.user_id) {
+        compteParFournisseur[c.user_id] = (compteParFournisseur[c.user_id] ?? 0) + 1;
+      }
+      if (c.listing_id) {
+        compteParListing[c.listing_id] = (compteParListing[c.listing_id] ?? 0) + 1;
+      }
+    });
+    setContactsParFournisseur(compteParFournisseur);
+    setContactsParListing(compteParListing);
 
     const { data: produitStar } = await supabase
       .from("produit_star")
@@ -461,6 +485,22 @@ export default function AdminPage() {
                         EN ATTENTE DE VALIDATION
                       </span>
                     )}
+                    {!p.est_admin && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDetailOuvert((prev) => ({
+                            ...prev,
+                            [p.id]: !prev[p.id],
+                          }))
+                        }
+                        className="ml-2 font-mono text-xs text-safety-dark underline hover:text-alert"
+                      >
+                        · {contactsParFournisseur[p.id] ?? 0} contact
+                        {(contactsParFournisseur[p.id] ?? 0) > 1 ? "s" : ""}{" "}
+                        WhatsApp ({detailOuvert[p.id] ? "masquer" : "détail"})
+                      </button>
+                    )}
                   </p>
                   <p className="font-mono text-xs text-steel">
                     {p.telephone}
@@ -531,6 +571,33 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+
+              {!p.est_admin && detailOuvert[p.id] && (
+                <div className="bg-cement border border-concrete/10 rounded-sm p-3">
+                  {listings.filter((l) => l.user_id === p.id).length === 0 ? (
+                    <p className="font-body text-xs text-steel">
+                      Aucune annonce déposée.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      {listings
+                        .filter((l) => l.user_id === p.id)
+                        .map((l) => (
+                          <div
+                            key={l.id}
+                            className="flex items-center justify-between gap-4 font-mono text-xs text-steel"
+                          >
+                            <span className="truncate">{l.titre}</span>
+                            <span className="text-safety-dark whitespace-nowrap">
+                              {contactsParListing[l.id] ?? 0} contact
+                              {(contactsParListing[l.id] ?? 0) > 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {!p.est_admin && (
                 <div className="flex gap-2 items-center">

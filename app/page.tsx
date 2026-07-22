@@ -85,6 +85,7 @@ export default async function Home() {
           paysOrigine: l.pays_origine,
           fournisseurNom: l.importateur,
           fournisseurPhoto: l.fournisseur_photo,
+          userId: l.user_id,
         }))
       : sampleListings;
 

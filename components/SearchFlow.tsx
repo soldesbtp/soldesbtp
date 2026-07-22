@@ -20,6 +20,7 @@ type Row = {
   prix: number;
   image_url: string | null;
   pays_origine: string | null;
+  user_id: string | null;
 };
 
 type Step = "fournisseur" | "collection" | "format" | "resultats";
@@ -199,6 +200,7 @@ export default function SearchFlow({ ville }: { ville: string }) {
     paysOrigine: r.pays_origine,
     fournisseurNom: r.importateur,
     fournisseurPhoto: fournisseur ? profil?.photo_url ?? null : null,
+    userId: r.user_id,
   }));
 
   return (

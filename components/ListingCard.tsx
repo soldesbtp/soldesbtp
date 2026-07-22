@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import { createClient } from "@/lib/supabase-browser";
 
 export type Listing = {
   id: string;
@@ -16,6 +17,7 @@ export type Listing = {
   paysOrigine?: string | null;
   fournisseurNom?: string | null;
   fournisseurPhoto?: string | null;
+  userId?: string | null;
 };
 
 export const codesParPays: Record<string, string> = {
@@ -55,6 +57,15 @@ export default function ListingCard({
   onDelete?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const supabase = createClient();
+
+  function enregistrerClicWhatsapp() {
+    if (!listing.userId) return;
+    supabase
+      .from("contacts_whatsapp")
+      .insert({ user_id: listing.userId, listing_id: listing.id })
+      .then(() => {});
+  }
 
   const discount = listing.originalPrice
     ? Math.round(
@@ -145,6 +156,7 @@ export default function ListingCard({
               href={whatsappLink(listing.whatsapp, listing.title)}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={enregistrerClicWhatsapp}
               className="mt-auto text-center font-body font-semibold px-4 py-2.5 bg-safety text-concrete rounded-sm hover:bg-safety-dark transition-colors"
             >
               Réserver sur WhatsApp
