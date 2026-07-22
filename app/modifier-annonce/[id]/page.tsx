@@ -61,6 +61,7 @@ export default function ModifierAnnoncePage() {
   const [ville, setVille] = useState("");
   const [collection, setCollection] = useState("");
   const [typeCarrelage, setTypeCarrelage] = useState("");
+  const [marque, setMarque] = useState("");
   const [format, setFormat] = useState("");
   const [paysOrigine, setPaysOrigine] = useState("");
   const [quantite, setQuantite] = useState("");
@@ -98,6 +99,7 @@ export default function ModifierAnnoncePage() {
       setVille(listing.ville ?? "");
       setCollection(listing.collection ?? "");
       setTypeCarrelage(listing.type_carrelage ?? "");
+      setMarque(listing.marque ?? "");
       setFormat(listing.format ?? "");
       setPaysOrigine(listing.pays_origine ?? "");
       setQuantite(listing.quantite ?? "");
@@ -139,6 +141,7 @@ export default function ModifierAnnoncePage() {
         ville,
         collection,
         type_carrelage: typeCarrelage || null,
+        marque: marque || null,
         format,
         pays_origine: paysOrigine || null,
         quantite,
@@ -246,6 +249,7 @@ export default function ModifierAnnoncePage() {
               onChange={(e) => {
                 setCollection(e.target.value);
                 setTypeCarrelage("");
+                setMarque("");
                 setFormat("");
               }}
               className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body bg-white"
@@ -276,6 +280,20 @@ export default function ModifierAnnoncePage() {
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {collection && (
+            <div>
+              <label className="font-body text-sm text-steel block mb-1">
+                Marque
+              </label>
+              <input
+                value={marque}
+                onChange={(e) => setMarque(e.target.value)}
+                placeholder="Ex : Bestile, Huida..."
+                className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body"
+              />
             </div>
           )}
 

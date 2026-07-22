@@ -5,6 +5,7 @@ export type DbListing = {
   titre: string;
   collection: string;
   type_carrelage: string | null;
+  marque: string | null;
   importateur: string | null;
   telephone: string | null;
   format: string | null;

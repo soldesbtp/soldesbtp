@@ -59,6 +59,7 @@ export default function DeposerPage() {
   const [ville, setVille] = useState("");
   const [collection, setCollection] = useState("");
   const [typeCarrelage, setTypeCarrelage] = useState("");
+  const [marque, setMarque] = useState("");
   const [format, setFormat] = useState("");
   const [paysOrigineChoisi, setPaysOrigineChoisi] = useState("");
   const [quantite, setQuantite] = useState("");
@@ -128,6 +129,7 @@ export default function DeposerPage() {
       ville,
       collection,
       type_carrelage: typeCarrelage || null,
+      marque: marque || null,
       importateur: nomSociete,
       telephone,
       format,
@@ -315,6 +317,7 @@ export default function DeposerPage() {
             onChange={(e) => {
               setCollection(e.target.value);
               setTypeCarrelage("");
+              setMarque("");
               setFormat("");
             }}
             className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body bg-white"
@@ -346,6 +349,20 @@ export default function DeposerPage() {
                 </option>
               ))}
             </select>
+          </div>
+        )}
+
+        {collection && (
+          <div>
+            <label className="font-body text-sm text-steel block mb-1">
+              Marque
+            </label>
+            <input
+              value={marque}
+              onChange={(e) => setMarque(e.target.value)}
+              placeholder="Ex : Bestile, Huida..."
+              className="w-full border border-concrete/20 rounded-sm px-3 py-2 font-body"
+            />
           </div>
         )}
 

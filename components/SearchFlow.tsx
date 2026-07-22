@@ -20,6 +20,7 @@ type Row = {
   prix: number;
   image_url: string | null;
   pays_origine: string | null;
+  marque: string | null;
   user_id: string | null;
 };
 
@@ -203,6 +204,7 @@ export default function SearchFlow({ ville }: { ville: string }) {
     imageUrl: r.image_url,
     whatsapp: r.telephone,
     paysOrigine: r.pays_origine,
+    marque: r.marque,
     fournisseurNom: r.importateur,
     fournisseurPhoto: fournisseur ? profil?.photo_url ?? null : null,
     userId: r.user_id,

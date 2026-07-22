@@ -16,6 +16,7 @@ export type Listing = {
   imageUrl?: string | null;
   whatsapp?: string | null;
   paysOrigine?: string | null;
+  marque?: string | null;
   fournisseurNom?: string | null;
   fournisseurPhoto?: string | null;
   userId?: string | null;
@@ -144,6 +145,11 @@ export default function ListingCard({
                 />
               )}
               Made in {listing.paysOrigine}
+            </p>
+          )}
+          {listing.marque && (
+            <p className="font-body text-xs text-steel mb-1">
+              Marque : <span className="font-semibold">{listing.marque}</span>
             </p>
           )}
           <p className="font-mono text-xs text-steel mb-4">

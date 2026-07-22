@@ -83,6 +83,7 @@ export default async function Home() {
           imageUrl: l.image_url,
           whatsapp: l.telephone,
           paysOrigine: l.pays_origine,
+          marque: l.marque,
           fournisseurNom: l.importateur,
           fournisseurPhoto: l.fournisseur_photo,
           userId: l.user_id,
