@@ -29,7 +29,8 @@ function buildUrl(
   ville: string,
   fournisseur?: string | null,
   collection?: string | null,
-  format?: string | null
+  format?: string | null,
+  tousFormats?: boolean
 ) {
   const params = new URLSearchParams();
   params.set("ville", ville);
@@ -37,6 +38,7 @@ function buildUrl(
   if (fournisseur) params.set("fournisseur", fournisseur);
   if (collection) params.set("collection", collection);
   if (format) params.set("format", format);
+  if (tousFormats) params.set("tousFormats", "1");
   return `/recherche?${params.toString()}`;
 }
 
@@ -48,6 +50,7 @@ export default function SearchFlow({ ville }: { ville: string }) {
   const fournisseur = searchParams.get("fournisseur");
   const collection = searchParams.get("collection");
   const format = searchParams.get("format");
+  const tousFormats = searchParams.get("tousFormats") === "1";
 
   const [fournisseurs, setFournisseurs] = useState<string[]>([]);
   const [collections, setCollections] = useState<string[]>([]);
@@ -63,7 +66,7 @@ export default function SearchFlow({ ville }: { ville: string }) {
     ? "fournisseur"
     : !collection
     ? "collection"
-    : !format
+    : !format && !tousFormats
     ? "format"
     : "resultats";
 
@@ -163,21 +166,23 @@ export default function SearchFlow({ ville }: { ville: string }) {
   }, [supabase, fournisseur, collection, ville]);
 
   useEffect(() => {
-    if (!fournisseur || !collection || !format) return;
+    if (!fournisseur || !collection) return;
+    if (!format && !tousFormats) return;
     setLoading(true);
-    supabase
+    let query = supabase
       .from("listings")
       .select("*")
       .eq("importateur", fournisseur)
       .eq("collection", collection)
-      .eq("format", format)
-      .eq("ville", ville)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setResultats((data ?? []) as Row[]);
-        setLoading(false);
-      });
-  }, [supabase, fournisseur, collection, format, ville]);
+      .eq("ville", ville);
+    if (format) {
+      query = query.eq("format", format);
+    }
+    query.order("created_at", { ascending: false }).then(({ data }) => {
+      setResultats((data ?? []) as Row[]);
+      setLoading(false);
+    });
+  }, [supabase, fournisseur, collection, format, tousFormats, ville]);
 
   useEffect(() => {
     if (!fournisseur) {
@@ -361,10 +366,18 @@ export default function SearchFlow({ ville }: { ville: string }) {
 
         {step === "resultats" && !loading && (
           <div>
-            <h2 className="font-display text-xl mb-6">
-              {listings.length} PRODUIT{listings.length > 1 ? "S" : ""} TROUVÉ
-              {listings.length > 1 ? "S" : ""}
-            </h2>
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+              <h2 className="font-display text-xl">
+                {listings.length} PRODUIT{listings.length > 1 ? "S" : ""} TROUVÉ
+                {listings.length > 1 ? "S" : ""}
+              </h2>
+              <button
+                onClick={() => router.push(buildUrl(ville, fournisseur))}
+                className="font-body text-sm px-4 py-2 border border-concrete/20 rounded-sm hover:border-safety hover:text-alert transition-colors"
+              >
+                Voir les autres collections de {fournisseur}
+              </button>
+            </div>
             {listings.length === 0 ? (
               <p className="font-body text-sm text-steel">
                 Aucun produit ne correspond à ces critères pour l&apos;instant.

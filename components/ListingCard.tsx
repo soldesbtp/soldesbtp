@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 
 export type Listing = {
@@ -92,7 +93,16 @@ export default function ListingCard({
 
         <div className="p-4 flex flex-col flex-1">
           {listing.fournisseurNom && (
-            <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-concrete/10">
+            <Link
+              href={`/recherche?ville=${encodeURIComponent(
+                listing.location
+              )}&mode=fournisseur&fournisseur=${encodeURIComponent(
+                listing.fournisseurNom
+              )}&collection=${encodeURIComponent(
+                listing.category
+              )}&tousFormats=1`}
+              className="flex items-center gap-2.5 mb-3 pb-3 border-b border-concrete/10 hover:opacity-75 transition-opacity"
+            >
               {listing.fournisseurPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -106,7 +116,7 @@ export default function ListingCard({
               <span className="font-display text-sm">
                 {listing.fournisseurNom}
               </span>
-            </div>
+            </Link>
           )}
 
           <div className="flex justify-between items-start mb-3">
