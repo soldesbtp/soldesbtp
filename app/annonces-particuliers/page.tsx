@@ -34,6 +34,7 @@ function AnnoncesParticuliersContent() {
       .select("*")
       .eq("collection", "Surplus de chantier")
       .eq("ville", ville)
+      .eq("valide", true)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         setRows((data ?? []) as Row[]);

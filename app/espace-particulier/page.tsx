@@ -53,6 +53,7 @@ export default function EspaceParticulierPage() {
       telephone,
       image_url: imageUrl,
       user_id: null,
+      valide: false,
     });
 
     setLoading(false);
@@ -72,10 +73,11 @@ export default function EspaceParticulierPage() {
       <section className="px-6 py-12">
         {success ? (
           <div className="stock-tag max-w-md mx-auto text-center">
-            <h1 className="font-display text-xl mb-3">ANNONCE PUBLIÉE</h1>
+            <h1 className="font-display text-xl mb-3">ANNONCE ENVOYÉE</h1>
             <p className="font-body text-sm text-steel">
-              Votre annonce de surplus de chantier est en ligne sur
-              SoldesBTP.ma.
+              Votre annonce de surplus de chantier a bien été reçue. Elle
+              sera visible sur SoldesBTP.ma dès qu&apos;elle aura été
+              validée par notre équipe.
             </p>
           </div>
         ) : (

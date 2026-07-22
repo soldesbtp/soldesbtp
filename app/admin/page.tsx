@@ -26,6 +26,16 @@ type ListingRow = {
   user_id: string | null;
 };
 
+type AnnonceParticulierRow = {
+  id: string;
+  titre: string;
+  ville: string;
+  quantite: string | null;
+  prix: number;
+  telephone: string | null;
+  image_url: string | null;
+};
+
 function whatsappLien(phone: string, message: string) {
   const digits = phone.replace(/[^0-9]/g, "");
   const international = digits.startsWith("0") ? "212" + digits.slice(1) : digits;
@@ -55,6 +65,9 @@ export default function AdminPage() {
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [listings, setListings] = useState<ListingRow[]>([]);
+  const [annoncesParticuliers, setAnnoncesParticuliers] = useState<
+    AnnonceParticulierRow[]
+  >([]);
 
   const [nouveauxEmails, setNouveauxEmails] = useState<Record<string, string>>({});
   const [emailEnCours, setEmailEnCours] = useState<string | null>(null);
@@ -122,6 +135,16 @@ export default function AdminPage() {
       .select("id, titre, collection, ville, prix, user_id")
       .order("created_at", { ascending: false });
     setListings((listingsData ?? []) as ListingRow[]);
+
+    const { data: annoncesParticuliersData } = await supabase
+      .from("listings")
+      .select("id, titre, ville, quantite, prix, telephone, image_url")
+      .eq("collection", "Surplus de chantier")
+      .eq("valide", false)
+      .order("created_at", { ascending: false });
+    setAnnoncesParticuliers(
+      (annoncesParticuliersData ?? []) as AnnonceParticulierRow[]
+    );
 
     const { data: contactsData } = await supabase
       .from("contacts_whatsapp")
@@ -296,10 +319,40 @@ export default function AdminPage() {
     alert(`Email changé pour "${profile.nom_societe}".`);
   }
 
+  async function actionSurAnnonce(action: "delete" | "valider", listingId: string) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    const res = await fetch("/api/admin/listing-action", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action, listingId }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json();
+      alert("Erreur : " + (body.error ?? "inconnue"));
+      return;
+    }
+
+    chargerDonnees();
+  }
+
   async function supprimerAnnonce(id: string) {
     if (!confirm("Supprimer définitivement cette annonce ?")) return;
-    await supabase.from("listings").delete().eq("id", id);
-    chargerDonnees();
+    await actionSurAnnonce("delete", id);
+  }
+
+  async function validerAnnonceParticulier(id: string) {
+    await actionSurAnnonce("valider", id);
+  }
+
+  async function refuserAnnonceParticulier(id: string) {
+    if (!confirm("Refuser et supprimer définitivement cette annonce ?")) return;
+    await actionSurAnnonce("delete", id);
   }
 
   async function supprimerCompte(profile: Profile) {
@@ -495,6 +548,65 @@ export default function AdminPage() {
             {psLoading ? "Enregistrement..." : "Enregistrer le produit star"}
           </button>
         </form>
+
+        <h2 className="font-display text-lg mb-4">
+          Annonces particuliers à valider
+          {annoncesParticuliers.length > 0 && (
+            <span className="ml-2 font-mono text-xs text-alert">
+              ({annoncesParticuliers.length})
+            </span>
+          )}
+        </h2>
+        <div className="mb-12 bg-white border border-concrete/15 rounded-sm overflow-hidden">
+          {annoncesParticuliers.length === 0 ? (
+            <p className="font-body text-sm text-steel p-4">
+              Aucune annonce de particulier en attente.
+            </p>
+          ) : (
+            annoncesParticuliers.map((a) => (
+              <div
+                key={a.id}
+                className="flex items-center justify-between gap-4 p-4 border-b border-concrete/10 last:border-b-0 flex-wrap"
+              >
+                <div className="flex items-center gap-3">
+                  {a.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={a.image_url}
+                      alt={a.titre}
+                      className="w-12 h-12 object-contain bg-cement border border-concrete/15 rounded-sm"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-sm bg-cement border border-concrete/15" />
+                  )}
+                  <div>
+                    <p className="font-body font-semibold text-sm">
+                      {a.titre}
+                    </p>
+                    <p className="font-mono text-xs text-steel">
+                      {a.ville} · {a.quantite} · {a.prix} DH
+                      {a.telephone && ` · ${a.telephone}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => validerAnnonceParticulier(a.id)}
+                    className="font-body text-xs px-3 py-2 border border-safety bg-safety/10 text-safety-dark rounded-sm hover:bg-safety hover:text-concrete transition-colors"
+                  >
+                    Valider
+                  </button>
+                  <button
+                    onClick={() => refuserAnnonceParticulier(a.id)}
+                    className="font-body text-xs px-3 py-2 border border-alert/40 text-alert rounded-sm hover:bg-alert hover:text-white transition-colors"
+                  >
+                    Refuser
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
 
         <h2 className="font-display text-lg mb-4">Fournisseurs</h2>
         <div className="mb-12 bg-white border border-concrete/15 rounded-sm overflow-hidden">
