@@ -159,6 +159,12 @@ export default function ProfilPage() {
     setPasswordSuccess(true);
   }
 
+  async function handleDeconnexion() {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
   if (checkingAuth) {
     return (
       <main className="min-h-screen bg-cement flex items-center justify-center">
@@ -341,6 +347,14 @@ export default function ProfilPage() {
           className="font-body text-sm text-steel hover:text-alert"
         >
           Retour au dépôt d'annonce
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDeconnexion}
+          className="font-body font-semibold px-6 py-3 border border-alert/40 text-alert rounded-sm hover:bg-alert hover:text-white transition-colors"
+        >
+          Déconnexion
         </button>
       </form>
     </main>
